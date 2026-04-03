@@ -5,6 +5,8 @@ from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.db.init_db import init_db
 from app.db.session import SessionLocal
+from app.models.models import User
+from app.core.security import get_password_hash
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -14,6 +16,20 @@ app = FastAPI(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.email == "admin@budipaste.com").first()
+        if not admin:
+            db.add(User(
+                email="admin@budipaste.com",
+                hashed_password=get_password_hash("admin123"),
+                full_name="System Administrator",
+                role="admin",
+                is_active=True,
+            ))
+            db.commit()
+    finally:
+        db.close()
 
 # Set up CORS
 if settings.BACKEND_CORS_ORIGINS:
