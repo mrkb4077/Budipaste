@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -46,6 +47,7 @@ def create_participant(
         )
 
     participant = models.Participant(
+        id=str(uuid.uuid4()),
         identifier=identifier,
         **participant_in.model_dump()
     )

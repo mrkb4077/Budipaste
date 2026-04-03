@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -38,7 +39,7 @@ def create_enrolment(
     """
     Create new enrolment record.
     """
-    enrolment = models.Enrolment(**enrolment_in.model_dump())
+    enrolment = models.Enrolment(id=str(uuid.uuid4()), **enrolment_in.model_dump())
     db.add(enrolment)
     db.commit()
     db.refresh(enrolment)

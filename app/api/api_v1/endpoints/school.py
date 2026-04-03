@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -44,6 +45,7 @@ def create_school(
     Create new school record.
     """
     school = models.School(
+        id=str(uuid.uuid4()),
         **school_in.model_dump(),
         recorded_by=current_user.id
     )

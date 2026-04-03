@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,6 +40,7 @@ def create_brain_check(
     Create new brain check record.
     """
     brain_check = models.BrainCheck(
+        id=str(uuid.uuid4()),
         **brain_check_in.model_dump(),
         recorded_by=current_user.id
     )

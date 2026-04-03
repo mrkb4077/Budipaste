@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -38,7 +39,7 @@ def create_new_attendance_absence(
     """
     Create new attendance absence summary record.
     """
-    absence = models.NewAttendanceAbsence(**absence_in.model_dump())
+    absence = models.NewAttendanceAbsence(id=str(uuid.uuid4()), **absence_in.model_dump())
     db.add(absence)
     db.commit()
     db.refresh(absence)

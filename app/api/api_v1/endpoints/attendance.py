@@ -39,7 +39,7 @@ def create_attendance(
     """
     Create new aggregated attendance record.
     """
-    attendance = models.Attendance(**attendance_in.model_dump())
+    attendance = models.Attendance(id=str(uuid.uuid4()), **attendance_in.model_dump())
     db.add(attendance)
     db.commit()
     db.refresh(attendance)

@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,6 +40,7 @@ def create_assessment(
     Create new assessment record.
     """
     assessment = models.Assessment(
+        id=str(uuid.uuid4()),
         **assessment_in.model_dump(),
         recorded_by=current_user.id
     )

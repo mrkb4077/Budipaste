@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,6 +40,7 @@ def create_makers_and_breakers(
     Create new makers and breakers record.
     """
     makers_and_breakers = models.MakersAndBreakers(
+        id=str(uuid.uuid4()),
         **makers_and_breakers_in.model_dump(),
         recorded_by=current_user.id
     )
