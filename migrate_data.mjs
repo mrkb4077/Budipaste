@@ -9,13 +9,13 @@ import { readFileSync } from 'fs';
 import { parse } from 'path';
 import XLSX from 'xlsx';
 
-const API_BASE = 'https://budipaste-production.up.railway.app/api/v1';
-const ADMIN_EMAIL = 'admin@budipaste.com';
-const ADMIN_PASSWORD = 'admin123';
+const API_BASE = process.env.API_BASE || 'https://budipaste-production.up.railway.app/api/v1';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@budipaste.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
-const PARTICIPANTS_CSV  = 'C:\\Users\\yiliy\\Downloads\\Participants_CSV_2026-04-04.csv';
-const ENROLMENT_XLSX   = 'C:\\Users\\yiliy\\OneDrive - Yiliyapinya Indigenous Corporation\\Enrolment_CSV_2026-04-04.xlsx';
-const CONTACTS_XLSX    = 'C:\\Users\\yiliy\\OneDrive - Yiliyapinya Indigenous Corporation\\Contacts_CSV_2026-04-04.xlsx';
+const PARTICIPANTS_CSV = 'C:\\Users\\yiliy\\Downloads\\Participants_CSV_2026-04-04.csv';
+const ENROLMENT_XLSX = 'C:\\Users\\yiliy\\OneDrive - Yiliyapinya Indigenous Corporation\\Enrolment_CSV_2026-04-04.xlsx';
+const CONTACTS_XLSX = 'C:\\Users\\yiliy\\OneDrive - Yiliyapinya Indigenous Corporation\\Contacts_CSV_2026-04-04.xlsx';
 
 const TERM = 2;
 const YEAR = 2026;
@@ -35,7 +35,7 @@ function parseDate(val) {
   // Excel serial date number
   if (/^\d{5}$/.test(s)) {
     const d = XLSX.SSF.parse_date_code(parseInt(s));
-    return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}T00:00:00`;
+    return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}T00:00:00`;
   }
   // ISO or common formats
   const d = new Date(s);
@@ -79,12 +79,18 @@ async function getAll(path, token) {
 
 // ── Step 1: Login ─────────────────────────────────────────────────────────────
 
-console.log('Logging in...');
+console.log(`Logging in to ${API_BASE}...`);
 const loginResp = await fetch(`${API_BASE}/auth/access-token`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   body: `username=${encodeURIComponent(ADMIN_EMAIL)}&password=${encodeURIComponent(ADMIN_PASSWORD)}`,
 });
+
+if (!loginResp.ok) {
+  const errorText = await loginResp.text();
+  throw new Error(`Login failed (${loginResp.status}): ${errorText}`);
+}
+
 const { access_token: token } = await loginResp.json();
 console.log('✓ Token obtained\n');
 
@@ -97,8 +103,8 @@ let ok = 0, skip = 0;
 
 for (const row of pRows) {
   const firstName = clean(row['First Name']);
-  const lastName  = clean(row['Last Name']);
-  const dob       = parseDate(row['Date of Birth']);
+  const lastName = clean(row['Last Name']);
+  const dob = parseDate(row['Date of Birth']);
 
   if (!firstName || !lastName || !dob) {
     console.log(`  SKIP (missing required): ${row['Full Name']}`);
@@ -106,34 +112,34 @@ for (const row of pRows) {
   }
 
   const payload = {
-    first_name:         firstName,
-    last_name:          lastName,
-    full_name:          clean(row['Full Name']) || `${firstName} ${lastName}`,
-    date_of_birth:      dob,
-    gender:             clean(row['Gender']),
-    cultural_identity:  clean(row['Cultural Identity']),
-    living_situation:   clean(row['Living Situation']),
-    employment:         clean(row['Employment']),
-    address_1:          clean(row['Address 1']),
-    address_2:          clean(row['Address 2']),
-    address_3:          clean(row['Address 3']),
-    contact_ph_1:       clean(row['Contact ph 1'] || row['Contact Ph 1']),
-    contact_ph_2:       clean(row['Contact Ph 2']),
-    contact_ph_3:       clean(row['Contact Ph 3']),
-    is_enrolled:        String(row['Is Enrolled']).toLowerCase() === 'true',
+    first_name: firstName,
+    last_name: lastName,
+    full_name: clean(row['Full Name']) || `${firstName} ${lastName}`,
+    date_of_birth: dob,
+    gender: clean(row['Gender']),
+    cultural_identity: clean(row['Cultural Identity']),
+    living_situation: clean(row['Living Situation']),
+    employment: clean(row['Employment']),
+    address_1: clean(row['Address 1']),
+    address_2: clean(row['Address 2']),
+    address_3: clean(row['Address 3']),
+    contact_ph_1: clean(row['Contact ph 1'] || row['Contact Ph 1']),
+    contact_ph_2: clean(row['Contact Ph 2']),
+    contact_ph_3: clean(row['Contact Ph 3']),
+    is_enrolled: String(row['Is Enrolled']).toLowerCase() === 'true',
     date_last_attended: parseDate(row['Date Last Attended']),
-    date_commenced:     parseDate(row['Date Commenced']),
-    dietary_needs:      clean(row['Dietary Needs']),
-    medical_needs:      clean(row['Medical Needs']),
-    neuro_diverse:      clean(row['Neuro Diverse']),
-    learning_disorder:  clean(row['Learning Disorder']),
-    physical_disorder:  clean(row['Physical Disorder']),
-    cannot_be_around:   clean(row['Cannot be around']),
-    contact_1_name:         clean(row['Contact 1 Name']),
+    date_commenced: parseDate(row['Date Commenced']),
+    dietary_needs: clean(row['Dietary Needs']),
+    medical_needs: clean(row['Medical Needs']),
+    neuro_diverse: clean(row['Neuro Diverse']),
+    learning_disorder: clean(row['Learning Disorder']),
+    physical_disorder: clean(row['Physical Disorder']),
+    cannot_be_around: clean(row['Cannot be around']),
+    contact_1_name: clean(row['Contact 1 Name']),
     contact_1_relationship: clean(row['Contact 1 Relationship']),
-    contact_2_name:         clean(row['Contact 2 Name']),
+    contact_2_name: clean(row['Contact 2 Name']),
     contact_2_relationship: clean(row['Contact 2 Relationship']),
-    contact_3_name:         clean(row['Contact 3 Name']),
+    contact_3_name: clean(row['Contact 3 Name']),
     contact_3_relationship: clean(row['Contact 3 Relationship']),
   };
 
@@ -152,7 +158,7 @@ for (const row of pRows) {
     if (existing && oldId) pidMap[oldId] = existing.identifier;
     skip++;
   } else {
-    console.log(`  ✗ FAILED ${payload.full_name}: ${status} ${JSON.stringify(body).slice(0,120)}`);
+    console.log(`  ✗ FAILED ${payload.full_name}: ${status} ${JSON.stringify(body).slice(0, 120)}`);
     skip++;
   }
 }
@@ -172,15 +178,15 @@ for (const row of eRows) {
   const carers = row['Number of carers'];
 
   const payload = {
-    participant_id:                 newPid,
-    term:                           TERM,
-    year:                           YEAR,
-    days:                           clean(row['Days']),
-    dual_enrollment:                String(row['Dual Enrollment'] || 'false').toLowerCase() === 'true',
-    dual_enrolment_details:         clean(row['Dual Enrolment Details']),
-    number_of_carers:               carers !== null && !isNaN(parseInt(carers)) ? parseInt(carers) : null,
-    research_project:               clean(row['Research Project']),
-    transition_plan:                clean(row['Transition Plan']),
+    participant_id: newPid,
+    term: TERM,
+    year: YEAR,
+    days: clean(row['Days']),
+    dual_enrollment: String(row['Dual Enrollment'] || 'false').toLowerCase() === 'true',
+    dual_enrolment_details: clean(row['Dual Enrolment Details']),
+    number_of_carers: carers !== null && !isNaN(parseInt(carers)) ? parseInt(carers) : null,
+    research_project: clean(row['Research Project']),
+    transition_plan: clean(row['Transition Plan']),
     transition_outcome_end_of_term: clean(row['Transition outcome end of term']),
   };
 
@@ -189,7 +195,7 @@ for (const row of eRows) {
     console.log(`  ✓ Enrolment: ${oldPid}`);
     ok++;
   } else {
-    console.log(`  ✗ FAILED ${oldPid}: ${status} ${JSON.stringify(body).slice(0,120)}`);
+    console.log(`  ✗ FAILED ${oldPid}: ${status} ${JSON.stringify(body).slice(0, 120)}`);
     skip++;
   }
 }
@@ -209,13 +215,13 @@ try {
     const newPid = pidMap[oldPid] || oldPid;
 
     const payload = {
-      participant_id:       newPid,
-      contact_name:         clean(row['Contact Name']),
+      participant_id: newPid,
+      contact_name: clean(row['Contact Name']),
       contact_relationship: clean(row['Contact Relationship']),
-      contact_email:        clean(row['Contact Email']),
-      contact_phone:        clean(row['Contact Phone']),
-      address:              clean(row['Address']),
-      add_detail:           clean(row['Add Detail']),
+      contact_email: clean(row['Contact Email']),
+      contact_phone: clean(row['Contact Phone']),
+      address: clean(row['Address']),
+      add_detail: clean(row['Add Detail']),
     };
 
     const { status, body } = await post('/contacts/', payload, token);
@@ -223,7 +229,7 @@ try {
       console.log(`  ✓ Contact: ${payload.contact_name} → ${oldPid}`);
       ok++;
     } else {
-      console.log(`  ✗ FAILED ${oldPid}: ${status} ${JSON.stringify(body).slice(0,120)}`);
+      console.log(`  ✗ FAILED ${oldPid}: ${status} ${JSON.stringify(body).slice(0, 120)}`);
       skip++;
     }
   }
