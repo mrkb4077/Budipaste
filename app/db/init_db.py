@@ -141,6 +141,13 @@ def upgrade_legacy_schema() -> None:
                     },
                 )
 
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_participants_identifier "
+                    "ON participants (identifier)"
+                )
+            )
+
         if inspector.has_table("attendance"):
             attendance_columns = existing_columns_by_table.get(
                 "attendance",
@@ -178,5 +185,6 @@ def init_db():
     # Import all models here to ensure they are registered with SQLAlchemy
     from app.models import models  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
+    # Repair legacy schemas first so dependent foreign keys can be created safely.
     upgrade_legacy_schema()
+    Base.metadata.create_all(bind=engine)
