@@ -37,6 +37,7 @@ LEGACY_COLUMN_PATCHES = {
         "contact_3_relationship": "VARCHAR",
     },
     "activities": {
+        "participant_uuid": "VARCHAR",
         "brain_games_booklets_minutes": "FLOAT DEFAULT 0",
         "brain_curriculum_minutes": "FLOAT DEFAULT 0",
         "online_cognitive_programs_minutes": "FLOAT DEFAULT 0",
@@ -59,11 +60,65 @@ LEGACY_COLUMN_PATCHES = {
     },
     "attendance": {
         "participant_name": "VARCHAR",
+        "participant_uuid": "VARCHAR",
         "term_1_attendance": "INTEGER DEFAULT 0",
         "term_2_attendance": "INTEGER DEFAULT 0",
         "term_3_attendance": "INTEGER DEFAULT 0",
         "term_4_attendance": "INTEGER DEFAULT 0",
     },
+    "enrolment": {
+        "participant_uuid": "VARCHAR",
+    },
+    "new_attendance": {
+        "participant_uuid": "VARCHAR",
+    },
+    "new_attendance_absence": {
+        "participant_uuid": "VARCHAR",
+    },
+    "exercise": {
+        "participant_uuid": "VARCHAR",
+    },
+    "assessments": {
+        "participant_uuid": "VARCHAR",
+    },
+    "brain_check": {
+        "participant_uuid": "VARCHAR",
+    },
+    "notes": {
+        "participant_uuid": "VARCHAR",
+    },
+    "referrals": {
+        "participant_uuid": "VARCHAR",
+    },
+    "contacts": {
+        "participant_uuid": "VARCHAR",
+    },
+    "school": {
+        "participant_uuid": "VARCHAR",
+    },
+    "plan": {
+        "participant_uuid": "VARCHAR",
+    },
+    "makers_and_breakers": {
+        "participant_uuid": "VARCHAR",
+    },
+}
+
+PARTICIPANT_REFERENCE_TABLES = {
+    "enrolment": "participant_id",
+    "attendance": "participant_name",
+    "new_attendance": "participant_id",
+    "new_attendance_absence": "participant_id",
+    "activities": "participant_id",
+    "exercise": "participant_id",
+    "assessments": "participant_id",
+    "brain_check": "participant_id",
+    "notes": "participant_id",
+    "referrals": "participant_id",
+    "contacts": "participant_id",
+    "school": "participant_id",
+    "plan": "participant_id",
+    "makers_and_breakers": "participant_id",
 }
 
 
@@ -85,6 +140,13 @@ def upgrade_legacy_schema() -> None:
                     existing_columns.add(column_name)
 
             existing_columns_by_table[table_name] = existing_columns
+            if "participant_uuid" in columns:
+                connection.execute(
+                    text(
+                        f"CREATE INDEX IF NOT EXISTS ix_{table_name}_participant_uuid "
+                        f"ON {table_name} (participant_uuid)"
+                    )
+                )
 
         if inspector.has_table("participants"):
             participant_columns = existing_columns_by_table.get(
@@ -180,6 +242,38 @@ def upgrade_legacy_schema() -> None:
                     )
                 )
 
+        if inspector.has_table("participants"):
+            for table_name, legacy_column in PARTICIPANT_REFERENCE_TABLES.items():
+                if not inspector.has_table(table_name):
+                    continue
+
+                table_columns = existing_columns_by_table.get(
+                    table_name,
+                    {column["name"] for column in inspector.get_columns(table_name)},
+                )
+                if "participant_uuid" not in table_columns or legacy_column not in table_columns:
+                    continue
+
+                connection.execute(
+                    text(
+                        f"""
+                        UPDATE {table_name}
+                        SET participant_uuid = (
+                            SELECT id
+                            FROM participants
+                            WHERE participants.identifier = {table_name}.{legacy_column}
+                            LIMIT 1
+                        )
+                        WHERE (participant_uuid IS NULL OR participant_uuid = '')
+                          AND EXISTS (
+                              SELECT 1
+                              FROM participants
+                              WHERE participants.identifier = {table_name}.{legacy_column}
+                          )
+                        """
+                    )
+                )
+
 
 def drop_participant_fk_constraints() -> None:
     """Drop FK constraints on participant_id/participant_name columns.
@@ -190,6 +284,9 @@ def drop_participant_fk_constraints() -> None:
     than the identifier string. This function drops the constraints from the
     live database after create_all() has run.
     """
+    if engine.dialect.name != "postgresql":
+        return
+
     inspector = inspect(engine)
     fk_drops = [
         ("enrolment", "enrolment_participant_id_fkey"),

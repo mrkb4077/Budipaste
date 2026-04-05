@@ -81,7 +81,8 @@ class Participant(ParticipantBase):
 
 # Enrolment schemas
 class EnrolmentBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     term: int
     year: int
     days: Optional[str] = None  # JSON string
@@ -98,6 +99,8 @@ class EnrolmentCreate(EnrolmentBase):
 
 
 class EnrolmentUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     days: Optional[str] = None
     dual_enrollment: Optional[bool] = None
     dual_enrolment_details: Optional[str] = None
@@ -118,7 +121,8 @@ class Enrolment(EnrolmentBase):
 
 # Attendance schemas (aggregated term-level)
 class AttendanceBase(BaseModel):
-    participant_name: str
+    participant_name: Optional[str] = None
+    participant_uuid: Optional[str] = None
     term_1_attendance: int = 0
     term_2_attendance: int = 0
     term_3_attendance: int = 0
@@ -130,6 +134,8 @@ class AttendanceCreate(AttendanceBase):
 
 
 class AttendanceUpdate(BaseModel):
+    participant_name: Optional[str] = None
+    participant_uuid: Optional[str] = None
     term_1_attendance: Optional[int] = None
     term_2_attendance: Optional[int] = None
     term_3_attendance: Optional[int] = None
@@ -147,7 +153,8 @@ class Attendance(AttendanceBase):
 
 # NewAttendance schemas (session-level check-in/out)
 class NewAttendanceBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     check_time: Optional[datetime] = None  # defaults to server time if not provided
     check_in_out: str  # Sign IN | Sign OUT | Non Attendance
     is_absent: bool = False
@@ -174,6 +181,8 @@ class NewAttendanceCreate(NewAttendanceBase):
 
 
 class NewAttendanceUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     check_time: Optional[datetime] = None
     check_in_out: Optional[str] = None
     is_absent: Optional[bool] = None
@@ -207,7 +216,8 @@ class NewAttendance(NewAttendanceBase):
 
 # NewAttendanceAbsence schemas
 class NewAttendanceAbsenceBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     participant_name: Optional[str] = None
     attendance_percentage: Optional[float] = None
     num_of_attendances: int = 0
@@ -224,6 +234,8 @@ class NewAttendanceAbsenceCreate(NewAttendanceAbsenceBase):
 
 
 class NewAttendanceAbsenceUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     participant_name: Optional[str] = None
     attendance_percentage: Optional[float] = None
     num_of_attendances: Optional[int] = None
@@ -246,7 +258,8 @@ class NewAttendanceAbsence(NewAttendanceAbsenceBase):
 
 # Activity schemas
 class ActivityBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date: datetime
     brain_games_booklets_minutes: float = 0
     brain_curriculum_minutes: float = 0
@@ -274,6 +287,8 @@ class ActivityCreate(ActivityBase):
 
 
 class ActivityUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     brain_games_booklets_minutes: Optional[float] = None
     brain_curriculum_minutes: Optional[float] = None
     online_cognitive_programs_minutes: Optional[float] = None
@@ -307,7 +322,8 @@ class Activity(ActivityBase):
 
 # Exercise schemas
 class ExerciseBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date: datetime
     exercise_type: Optional[str] = None
     minutes: float = 0
@@ -318,6 +334,8 @@ class ExerciseCreate(ExerciseBase):
 
 
 class ExerciseUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     exercise_type: Optional[str] = None
     minutes: Optional[float] = None
 
@@ -334,7 +352,8 @@ class Exercise(ExerciseBase):
 
 # Assessment schemas
 class AssessmentBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date_of_completion: datetime
     assessment: Optional[str] = None
     cars_score: Optional[str] = None
@@ -351,6 +370,8 @@ class AssessmentCreate(AssessmentBase):
 
 
 class AssessmentUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     assessment: Optional[str] = None
     cars_score: Optional[str] = None
     multilit_score: Optional[float] = None
@@ -373,7 +394,8 @@ class Assessment(AssessmentBase):
 
 # BrainCheck schemas
 class BrainCheckBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date: datetime
     options: Optional[str] = None  # Pre-frontal (GREEN) | Limbic (AMBER) | Brain Stem (RED)
     check: Optional[str] = None  # Check In | Check Out
@@ -384,6 +406,8 @@ class BrainCheckCreate(BrainCheckBase):
 
 
 class BrainCheckUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     options: Optional[str] = None
     check: Optional[str] = None
 
@@ -400,7 +424,8 @@ class BrainCheck(BrainCheckBase):
 
 # Note schemas
 class NoteBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date: datetime
     incident_occurred: Optional[bool] = None
     strengths: Optional[str] = None
@@ -414,6 +439,8 @@ class NoteCreate(NoteBase):
 
 
 class NoteUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     incident_occurred: Optional[bool] = None
     strengths: Optional[str] = None
     concerns: Optional[str] = None
@@ -433,7 +460,8 @@ class Note(NoteBase):
 
 # Referral schemas
 class ReferralBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     referred_from: Optional[str] = None
     referee_first_name: Optional[str] = None
     referee_last_name: Optional[str] = None
@@ -454,6 +482,8 @@ class ReferralCreate(ReferralBase):
 
 
 class ReferralUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     referred_from: Optional[str] = None
     referee_first_name: Optional[str] = None
     referee_last_name: Optional[str] = None
@@ -481,7 +511,8 @@ class Referral(ReferralBase):
 
 # Contact schemas
 class ContactBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     contact_name: Optional[str] = None
     contact_relationship: Optional[str] = None
     contact_email: Optional[str] = None
@@ -495,6 +526,8 @@ class ContactCreate(ContactBase):
 
 
 class ContactUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     contact_name: Optional[str] = None
     contact_relationship: Optional[str] = None
     contact_email: Optional[str] = None
@@ -515,7 +548,8 @@ class Contact(ContactBase):
 
 # School schemas
 class SchoolBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     school_name: Optional[str] = None
     year_level: Optional[int] = None
     last_date_of_school_attendance: Optional[datetime] = None
@@ -531,6 +565,8 @@ class SchoolCreate(SchoolBase):
 
 
 class SchoolUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     school_name: Optional[str] = None
     year_level: Optional[int] = None
     last_date_of_school_attendance: Optional[datetime] = None
@@ -553,7 +589,8 @@ class School(SchoolBase):
 
 # Plan schemas
 class PlanBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     plan_type: Optional[str] = None
     date_of_upload: Optional[datetime] = None
     file: Optional[str] = None  # JSON object
@@ -564,6 +601,8 @@ class PlanCreate(PlanBase):
 
 
 class PlanUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     plan_type: Optional[str] = None
     date_of_upload: Optional[datetime] = None
     file: Optional[str] = None
@@ -581,7 +620,8 @@ class Plan(PlanBase):
 
 # MakersAndBreakers schemas
 class MakersAndBreakersBase(BaseModel):
-    participant_id: str
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     date: datetime
     helped_others: Optional[str] = None
     was_patient_with_others: Optional[str] = None
@@ -606,6 +646,8 @@ class MakersAndBreakersCreate(MakersAndBreakersBase):
 
 
 class MakersAndBreakersUpdate(BaseModel):
+    participant_id: Optional[str] = None
+    participant_uuid: Optional[str] = None
     helped_others: Optional[str] = None
     was_patient_with_others: Optional[str] = None
     expressed_gratitude: Optional[str] = None

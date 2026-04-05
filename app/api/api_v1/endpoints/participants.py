@@ -88,6 +88,16 @@ def update_participant(
     if not participant:
         raise HTTPException(status_code=404, detail="Participant not found")
     update_data = participant_in.model_dump(exclude_unset=True)
+
+    new_full_name = update_data.get("full_name", participant.full_name)
+    new_date_of_birth = update_data.get("date_of_birth", participant.date_of_birth)
+    new_identifier = f"{new_full_name} | {new_date_of_birth.strftime('%Y-%m-%d')}"
+    if new_identifier != participant.identifier:
+        raise HTTPException(
+            status_code=400,
+            detail="Updating full_name or date_of_birth is temporarily restricted during participant key migration",
+        )
+
     for field, value in update_data.items():
         setattr(participant, field, value)
     db.add(participant)

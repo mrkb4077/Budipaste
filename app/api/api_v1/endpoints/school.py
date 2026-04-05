@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -22,13 +22,16 @@ def read_schools(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     # current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve school records. TEST
     """
     query = db.query(models.School)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.School.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.School.participant_id == participant_id)
     schools = query.offset(skip).limit(limit).all()
     return schools
@@ -44,9 +47,10 @@ def create_school(
     """
     Create new school record.
     """
+    school_data = sync_participant_reference(db, school_in.model_dump(), required=True)
     school = models.School(
         id=str(uuid.uuid4()),
-        **school_in.model_dump(),
+        **school_data,
         recorded_by=current_user.id
     )
     db.add(school)
@@ -86,6 +90,7 @@ def update_school(
     if not school:
         raise HTTPException(status_code=404, detail="School record not found")
     update_data = school_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data)
     for field, value in update_data.items():
         setattr(school, field, value)
     db.add(school)

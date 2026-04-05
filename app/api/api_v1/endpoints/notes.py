@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -17,13 +17,16 @@ def read_notes(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve note records.
     """
     query = db.query(models.Note)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.Note.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.Note.participant_id == participant_id)
     notes = query.offset(skip).limit(limit).all()
     return notes
@@ -39,9 +42,10 @@ def create_note(
     """
     Create new note record.
     """
+    note_data = sync_participant_reference(db, note_in.model_dump(), required=True)
     note = models.Note(
         id=str(uuid.uuid4()),
-        **note_in.model_dump(),
+        **note_data,
         recorded_by=current_user.id
     )
     db.add(note)
@@ -81,6 +85,7 @@ def update_note(
     if not note:
         raise HTTPException(status_code=404, detail="Note record not found")
     update_data = note_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data)
     for field, value in update_data.items():
         setattr(note, field, value)
     db.add(note)

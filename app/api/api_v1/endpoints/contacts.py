@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -17,13 +17,16 @@ def read_contacts(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve contact records.
     """
     query = db.query(models.Contact)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.Contact.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.Contact.participant_id == participant_id)
     contacts = query.offset(skip).limit(limit).all()
     return contacts
@@ -39,9 +42,10 @@ def create_contact(
     """
     Create new contact record.
     """
+    contact_data = sync_participant_reference(db, contact_in.model_dump(), required=True)
     contact = models.Contact(
         id=str(uuid.uuid4()),
-        **contact_in.model_dump(),
+        **contact_data,
         recorded_by=current_user.id
     )
     db.add(contact)
@@ -81,6 +85,7 @@ def update_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact record not found")
     update_data = contact_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data)
     for field, value in update_data.items():
         setattr(contact, field, value)
     db.add(contact)

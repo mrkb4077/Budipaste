@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -17,13 +17,16 @@ def read_assessments(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve assessment records.
     """
     query = db.query(models.Assessment)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.Assessment.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.Assessment.participant_id == participant_id)
     assessments = query.offset(skip).limit(limit).all()
     return assessments
@@ -39,9 +42,10 @@ def create_assessment(
     """
     Create new assessment record.
     """
+    assessment_data = sync_participant_reference(db, assessment_in.model_dump(), required=True)
     assessment = models.Assessment(
         id=str(uuid.uuid4()),
-        **assessment_in.model_dump(),
+        **assessment_data,
         recorded_by=current_user.id
     )
     db.add(assessment)
@@ -81,6 +85,7 @@ def update_assessment(
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment record not found")
     update_data = assessment_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data)
     for field, value in update_data.items():
         setattr(assessment, field, value)
     db.add(assessment)

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -17,13 +17,16 @@ def read_brain_checks(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve brain check records.
     """
     query = db.query(models.BrainCheck)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.BrainCheck.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.BrainCheck.participant_id == participant_id)
     brain_checks = query.offset(skip).limit(limit).all()
     return brain_checks
@@ -39,9 +42,10 @@ def create_brain_check(
     """
     Create new brain check record.
     """
+    brain_check_data = sync_participant_reference(db, brain_check_in.model_dump(), required=True)
     brain_check = models.BrainCheck(
         id=str(uuid.uuid4()),
-        **brain_check_in.model_dump(),
+        **brain_check_data,
         recorded_by=current_user.id
     )
     db.add(brain_check)
@@ -81,6 +85,7 @@ def update_brain_check(
     if not brain_check:
         raise HTTPException(status_code=404, detail="Brain check record not found")
     update_data = brain_check_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data)
     for field, value in update_data.items():
         setattr(brain_check, field, value)
     db.add(brain_check)

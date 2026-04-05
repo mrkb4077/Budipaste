@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -52,6 +52,48 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+def resolve_participant_reference(
+    db: Session,
+    participant_uuid: Optional[str] = None,
+    participant_identifier: Optional[str] = None,
+) -> models.Participant:
+    participant = None
+    if participant_uuid:
+        participant = db.query(models.Participant).filter(models.Participant.id == participant_uuid).first()
+    elif participant_identifier:
+        participant = db.query(models.Participant).filter(models.Participant.identifier == participant_identifier).first()
+
+    if not participant:
+        raise HTTPException(status_code=400, detail="Participant not found")
+
+    return participant
+
+
+def sync_participant_reference(
+    db: Session,
+    data: Dict[str, Any],
+    *,
+    legacy_field: str = "participant_id",
+    required: bool = False,
+) -> Dict[str, Any]:
+    participant_uuid = data.get("participant_uuid")
+    participant_identifier = data.get(legacy_field)
+
+    if not participant_uuid and not participant_identifier:
+        if required:
+            raise HTTPException(status_code=400, detail="Participant reference is required")
+        return data
+
+    participant = resolve_participant_reference(
+        db,
+        participant_uuid=participant_uuid,
+        participant_identifier=participant_identifier,
+    )
+    data[legacy_field] = participant.identifier
+    data["participant_uuid"] = participant.id
+    return data
 
 
 @router.post("/access-token", response_model=schemas.Token)

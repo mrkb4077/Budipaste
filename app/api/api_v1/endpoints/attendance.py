@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import schemas
-from app.api.api_v1.endpoints.auth import get_current_user, get_db
+from app.api.api_v1.endpoints.auth import get_current_user, get_db, sync_participant_reference
 from app.models import models
 
 router = APIRouter()
@@ -18,13 +18,16 @@ def read_attendance(
     skip: int = 0,
     limit: int = 100,
     participant_name: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve aggregated attendance records.
     """
     query = db.query(models.Attendance)
-    if participant_name:
+    if participant_uuid:
+        query = query.filter(models.Attendance.participant_uuid == participant_uuid)
+    elif participant_name:
         query = query.filter(models.Attendance.participant_name == participant_name)
     attendance = query.offset(skip).limit(limit).all()
     return attendance
@@ -40,7 +43,13 @@ def create_attendance(
     """
     Create new aggregated attendance record.
     """
-    attendance = models.Attendance(id=str(uuid.uuid4()), **attendance_in.model_dump())
+    attendance_data = sync_participant_reference(
+        db,
+        attendance_in.model_dump(),
+        legacy_field="participant_name",
+        required=True,
+    )
+    attendance = models.Attendance(id=str(uuid.uuid4()), **attendance_data)
     db.add(attendance)
     db.commit()
     db.refresh(attendance)
@@ -78,6 +87,7 @@ def update_attendance(
     if not attendance:
         raise HTTPException(status_code=404, detail="Attendance record not found")
     update_data = attendance_in.model_dump(exclude_unset=True)
+    update_data = sync_participant_reference(db, update_data, legacy_field="participant_name")
     for field, value in update_data.items():
         setattr(attendance, field, value)
     db.add(attendance)
@@ -111,13 +121,16 @@ def read_session_attendance(
     skip: int = 0,
     limit: int = 100,
     participant_id: str = None,
+    participant_uuid: str = None,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """
     Retrieve session-level attendance records (check-in/check-out events).
     """
     query = db.query(models.NewAttendance)
-    if participant_id:
+    if participant_uuid:
+        query = query.filter(models.NewAttendance.participant_uuid == participant_uuid)
+    elif participant_id:
         query = query.filter(models.NewAttendance.participant_id == participant_id)
     attendance = query.offset(skip).limit(limit).all()
     return attendance
@@ -133,8 +146,10 @@ def create_session_attendance(
     """
     Create new session-level attendance record (check-in/check-out).
     """
+    attendance_data = sync_participant_reference(db, attendance_in.model_dump(), required=True)
     attendance = models.NewAttendance(
-        **attendance_in.model_dump(),
+        id=str(uuid.uuid4()),
+        **attendance_data,
         recorded_by=current_user.id
     )
     db.add(attendance)
