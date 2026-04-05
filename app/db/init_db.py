@@ -148,32 +148,6 @@ def upgrade_legacy_schema() -> None:
                 )
             )
 
-        # Drop legacy FK constraints that point to participants.identifier
-        # (all participant_id columns are now plain strings, not foreign keys)
-        fk_drops = [
-            ("enrolment", "enrolment_participant_id_fkey"),
-            ("attendance", "attendance_participant_name_fkey"),
-            ("new_attendance", "new_attendance_participant_id_fkey"),
-            ("new_attendance_absence", "new_attendance_absence_participant_id_fkey"),
-            ("activities", "activities_participant_id_fkey"),
-            ("exercise", "exercise_participant_id_fkey"),
-            ("assessments", "assessments_participant_id_fkey"),
-            ("brain_check", "brain_check_participant_id_fkey"),
-            ("notes", "notes_participant_id_fkey"),
-            ("referrals", "referrals_participant_id_fkey"),
-            ("contacts", "contacts_participant_id_fkey"),
-            ("school", "school_participant_id_fkey"),
-            ("plan", "plan_participant_id_fkey"),
-            ("makers_and_breakers", "makers_and_breakers_participant_id_fkey"),
-        ]
-        for table_name, constraint_name in fk_drops:
-            if inspector.has_table(table_name):
-                connection.execute(
-                    text(
-                        f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {constraint_name}"
-                    )
-                )
-
         if inspector.has_table("attendance"):
             attendance_columns = existing_columns_by_table.get(
                 "attendance",
@@ -207,10 +181,50 @@ def upgrade_legacy_schema() -> None:
                 )
 
 
+def drop_participant_fk_constraints() -> None:
+    """Drop FK constraints on participant_id/participant_name columns.
+
+    SQLAlchemy needs the ForeignKey() declaration in models.py to resolve
+    ORM relationships, but we don't want PostgreSQL to *enforce* these
+    constraints because API clients send the participant UUID (id) rather
+    than the identifier string. This function drops the constraints from the
+    live database after create_all() has run.
+    """
+    inspector = inspect(engine)
+    fk_drops = [
+        ("enrolment", "enrolment_participant_id_fkey"),
+        ("attendance", "attendance_participant_name_fkey"),
+        ("new_attendance", "new_attendance_participant_id_fkey"),
+        ("new_attendance_absence", "new_attendance_absence_participant_id_fkey"),
+        ("activities", "activities_participant_id_fkey"),
+        ("exercise", "exercise_participant_id_fkey"),
+        ("assessments", "assessments_participant_id_fkey"),
+        ("brain_check", "brain_check_participant_id_fkey"),
+        ("notes", "notes_participant_id_fkey"),
+        ("referrals", "referrals_participant_id_fkey"),
+        ("contacts", "contacts_participant_id_fkey"),
+        ("school", "school_participant_id_fkey"),
+        ("plan", "plan_participant_id_fkey"),
+        ("makers_and_breakers", "makers_and_breakers_participant_id_fkey"),
+    ]
+    with engine.begin() as connection:
+        for table_name, constraint_name in fk_drops:
+            if inspector.has_table(table_name):
+                connection.execute(
+                    text(
+                        f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {constraint_name}"
+                    )
+                )
+
+
 def init_db():
     # Import all models here to ensure they are registered with SQLAlchemy
     from app.models import models  # noqa: F401
 
     # Repair legacy schemas first so dependent foreign keys can be created safely.
     upgrade_legacy_schema()
+    # Create any missing tables (with FK constraints as defined in models.py).
     Base.metadata.create_all(bind=engine)
+    # Drop the participant FK constraints so API clients can write using the
+    # participant UUID (id) instead of the identifier string.
+    drop_participant_fk_constraints()

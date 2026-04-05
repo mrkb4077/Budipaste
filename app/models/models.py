@@ -76,7 +76,7 @@ class Enrolment(Base):
     __tablename__ = "enrolment"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     term = Column(Integer, nullable=False)  # 1-4
     year = Column(Integer, nullable=False)
     days = Column(Text)  # JSON array as string: ["Monday", "Wednesday"]
@@ -97,7 +97,7 @@ class Attendance(Base):
     __tablename__ = "attendance"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_name = Column(String, nullable=False)
+    participant_name = Column(String, ForeignKey("participants.identifier"), nullable=False)
     term_1_attendance = Column(Integer, default=0)
     term_2_attendance = Column(Integer, default=0)
     term_3_attendance = Column(Integer, default=0)
@@ -113,7 +113,7 @@ class NewAttendance(Base):
     __tablename__ = "new_attendance"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     check_time = Column(DateTime, nullable=False)
     check_in_out = Column(String, nullable=False)  # Sign IN | Sign OUT | Non Attendance
     is_absent = Column(Boolean, default=False)
@@ -136,7 +136,7 @@ class NewAttendanceAbsence(Base):
     __tablename__ = "new_attendance_absence"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     participant_name = Column(String)
     attendance_percentage = Column(Float)
     num_of_attendances = Column(Integer, default=0)
@@ -157,7 +157,7 @@ class Activity(Base):
     __tablename__ = "activities"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date = Column(DateTime, nullable=False)
     brain_games_booklets_minutes = Column(Float, default=0)
     brain_curriculum_minutes = Column(Float, default=0)
@@ -190,7 +190,7 @@ class Exercise(Base):
     __tablename__ = "exercise"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date = Column(DateTime, nullable=False)  # NOTE: lowercase in export
     exercise_type = Column(String)
     minutes = Column(Float, default=0)  # NOTE: lowercase in export
@@ -206,7 +206,7 @@ class Assessment(Base):
     __tablename__ = "assessments"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date_of_completion = Column(DateTime, nullable=False)
     assessment = Column(String)  # CARS Literacy | Multi-lit Sight Words | CAMS Math | CogniFit | GEMS Youth Wellbeing Tool
     cars_score = Column(String)  # Grade/letter format
@@ -228,7 +228,7 @@ class BrainCheck(Base):
     __tablename__ = "brain_check"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date = Column(DateTime, nullable=False)
     options = Column(String)  # Pre-frontal (GREEN) | Limbic (AMBER) | Brain Stem (RED)
     check = Column(String)  # Check In | Check Out
@@ -244,7 +244,7 @@ class Note(Base):
     __tablename__ = "notes"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date = Column(DateTime, nullable=False)
     incident_occurred = Column(Boolean)
     strengths = Column(Text)
@@ -263,7 +263,7 @@ class Referral(Base):
     __tablename__ = "referrals"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     referred_from = Column(String)
     referee_first_name = Column(String)
     referee_last_name = Column(String)
@@ -289,7 +289,7 @@ class Contact(Base):
     __tablename__ = "contacts"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     contact_name = Column(String)
     contact_relationship = Column(String)  # Legal Guardian | YJ Case Manager | Child Safety Officer | Team Leader | Other
     contact_email = Column(String)
@@ -308,7 +308,7 @@ class School(Base):
     __tablename__ = "school"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     school_name = Column(String)
     year_level = Column(Integer)
     last_date_of_school_attendance = Column(DateTime)
@@ -329,7 +329,7 @@ class Plan(Base):
     __tablename__ = "plan"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     plan_type = Column(String)  # Yili Plan (additional types may be added)
     date_of_upload = Column(DateTime)  # NOTE: camelCase in export
     file = Column(Text)  # JSON object with name, size, extension, signed URL
@@ -345,7 +345,7 @@ class MakersAndBreakers(Base):
     __tablename__ = "makers_and_breakers"
 
     id = Column(String, primary_key=True, index=True)  # Budibase _id
-    participant_id = Column(String, nullable=False)
+    participant_id = Column(String, ForeignKey("participants.identifier"), nullable=False)
     date = Column(DateTime, nullable=False)
 
     # All 16 fields use: Not Observed | Somewhat Observed | Frequently Observed
