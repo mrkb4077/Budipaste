@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # User schemas
@@ -158,6 +158,14 @@ class NewAttendanceBase(BaseModel):
     guardian_contact: Optional[str] = None
     number_of_carers: Optional[int] = None
 
+    @field_validator("check_time", mode="before")
+    @classmethod
+    def coerce_empty_check_time(cls, v):
+        """Allow Budibase to send empty string or null — both become None (server sets UTC time)."""
+        if v == "" or v is None:
+            return None
+        return v
+
 
 class NewAttendanceCreate(NewAttendanceBase):
     pass
@@ -173,6 +181,13 @@ class NewAttendanceUpdate(BaseModel):
     guardian_name: Optional[str] = None
     guardian_contact: Optional[str] = None
     number_of_carers: Optional[int] = None
+
+    @field_validator("check_time", mode="before")
+    @classmethod
+    def coerce_empty_check_time(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class NewAttendance(NewAttendanceBase):
