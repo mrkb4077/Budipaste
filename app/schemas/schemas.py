@@ -161,8 +161,10 @@ class NewAttendanceBase(BaseModel):
     @field_validator("check_time", mode="before")
     @classmethod
     def coerce_empty_check_time(cls, v):
-        """Allow Budibase to send empty string or null — both become None (server sets UTC time)."""
-        if v == "" or v is None:
+        """Allow Budibase to send empty/whitespace string or null — all become None (server sets UTC time)."""
+        if v is None:
+            return None
+        if isinstance(v, str) and not v.strip():
             return None
         return v
 
@@ -185,7 +187,9 @@ class NewAttendanceUpdate(BaseModel):
     @field_validator("check_time", mode="before")
     @classmethod
     def coerce_empty_check_time(cls, v):
-        if v == "" or v is None:
+        if v is None:
+            return None
+        if isinstance(v, str) and not v.strip():
             return None
         return v
 
