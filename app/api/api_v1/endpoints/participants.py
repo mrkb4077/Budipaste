@@ -78,6 +78,7 @@ def update_participant(
     *,
     db: Session = Depends(get_db),
     participant_id: str,
+    participant_in: schemas.ParticipantUpdate,
     current_user: models.User = Depends(get_current_user),
 ) -> Any:
     """

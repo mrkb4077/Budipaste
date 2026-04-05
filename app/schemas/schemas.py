@@ -642,13 +642,3 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
-
-
-# Authentication schemas
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    email: Optional[str] = None

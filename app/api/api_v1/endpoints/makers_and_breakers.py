@@ -51,7 +51,7 @@ def create_makers_and_breakers(
 
 
 @router.get("/{makers_and_breakers_id}", response_model=schemas.MakersAndBreakers)
-def read_makers_and_breakers(
+def read_makers_and_breakers_record(
     *,
     db: Session = Depends(get_db),
     makers_and_breakers_id: str,
