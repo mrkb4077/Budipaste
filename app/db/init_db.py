@@ -148,6 +148,32 @@ def upgrade_legacy_schema() -> None:
                 )
             )
 
+        # Drop legacy FK constraints that point to participants.identifier
+        # (all participant_id columns are now plain strings, not foreign keys)
+        fk_drops = [
+            ("enrolment", "enrolment_participant_id_fkey"),
+            ("attendance", "attendance_participant_name_fkey"),
+            ("new_attendance", "new_attendance_participant_id_fkey"),
+            ("new_attendance_absence", "new_attendance_absence_participant_id_fkey"),
+            ("activities", "activities_participant_id_fkey"),
+            ("exercise", "exercise_participant_id_fkey"),
+            ("assessments", "assessments_participant_id_fkey"),
+            ("brain_check", "brain_check_participant_id_fkey"),
+            ("notes", "notes_participant_id_fkey"),
+            ("referrals", "referrals_participant_id_fkey"),
+            ("contacts", "contacts_participant_id_fkey"),
+            ("school", "school_participant_id_fkey"),
+            ("plan", "plan_participant_id_fkey"),
+            ("makers_and_breakers", "makers_and_breakers_participant_id_fkey"),
+        ]
+        for table_name, constraint_name in fk_drops:
+            if inspector.has_table(table_name):
+                connection.execute(
+                    text(
+                        f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {constraint_name}"
+                    )
+                )
+
         if inspector.has_table("attendance"):
             attendance_columns = existing_columns_by_table.get(
                 "attendance",
