@@ -148,7 +148,7 @@ class Attendance(AttendanceBase):
 # NewAttendance schemas (session-level check-in/out)
 class NewAttendanceBase(BaseModel):
     participant_id: str
-    check_time: datetime
+    check_time: Optional[datetime] = None  # defaults to server time if not provided
     check_in_out: str  # Sign IN | Sign OUT | Non Attendance
     is_absent: bool = False
     is_trial: bool = False

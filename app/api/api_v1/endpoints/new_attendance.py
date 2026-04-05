@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -39,9 +40,12 @@ def create_new_attendance(
     """
     Create new session-level attendance record.
     """
+    data = attendance_in.model_dump()
+    if not data.get("check_time"):
+        data["check_time"] = datetime.utcnow()
     attendance = models.NewAttendance(
         id=str(uuid.uuid4()),
-        **attendance_in.model_dump(),
+        **data,
         recorded_by=current_user.id
     )
     db.add(attendance)
