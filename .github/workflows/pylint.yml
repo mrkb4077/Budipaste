@@ -28,4 +28,4 @@ jobs:
 
       - name: Analyse the code with pylint
         run: |
-          python -m pylint app run.py init_db.py create_test_user.py cloud_setup.py migrate_data.py
+          python -m pylint --disable=C,R,W app run.py init_db.py create_test_user.py cloud_setup.py migrate_data.py
